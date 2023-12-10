@@ -1,5 +1,6 @@
 package com.spring.springsecurity.config;
 
+import com.spring.springsecurity.model.Authority;
 import com.spring.springsecurity.model.Customer;
 import com.spring.springsecurity.repository.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class SpringSecurityUsernamePwdAuthenticationProvider implements AuthenticationProvider {
@@ -33,15 +35,22 @@ public class SpringSecurityUsernamePwdAuthenticationProvider implements Authenti
 
     if (!customer.isEmpty()) {
       if (passwordEncoder.matches(pwd, customer.getFirst().getPwd())) {
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority(customer.getFirst().getRole()));
-        return new UsernamePasswordAuthenticationToken(username, pwd, authorities);
+        return new UsernamePasswordAuthenticationToken(username, pwd, getGrantedAuthorities(customer.getFirst().getAuthorities()));
       } else {
         throw new BadCredentialsException("Invalid Password");
       }
     } else {
       throw new BadCredentialsException("No user registered with this details");
     }
+  }
+
+  private List<GrantedAuthority> getGrantedAuthorities(Set<Authority> authorities) {
+    List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
+    for (Authority authority : authorities) {
+      grantedAuthorities.add(new SimpleGrantedAuthority(authority.getName()));
+    }
+
+    return grantedAuthorities;
   }
 
   @Override
