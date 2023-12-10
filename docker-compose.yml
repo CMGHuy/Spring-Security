@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  mariadb:
+    image: mariadb:11
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: spring-security
+      MYSQL_USER: root
+      MYSQL_PASSWORD: admin
+    volumes:
+      - data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+volumes:
+  data:
