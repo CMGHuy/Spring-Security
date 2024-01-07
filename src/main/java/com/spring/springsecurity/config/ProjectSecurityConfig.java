@@ -43,11 +43,6 @@ public class ProjectSecurityConfig {
         })).csrf((csrf) -> csrf.csrfTokenRequestHandler(requestHandler).ignoringRequestMatchers("/contact","/register")
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
         .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
-        .addFilterBefore(new RequestValidationBeforeFilter(), BasicAuthenticationFilter.class)
-        .addFilterAt(new AuthoritiesLoggingAtFilter(),BasicAuthenticationFilter.class)
-        .addFilterAfter(new AuthoritiesLoggingAfterFilter(), BasicAuthenticationFilter.class)
-        .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class)
-        .addFilterBefore(new JWTTokenValidatorFilter(), BasicAuthenticationFilter.class)
         .authorizeHttpRequests((requests)->requests
             .requestMatchers("/myAccount").hasRole("USER")
             .requestMatchers("/myBalance").hasAnyRole("USER","ADMIN")
@@ -58,11 +53,6 @@ public class ProjectSecurityConfig {
         .formLogin(Customizer.withDefaults())
         .httpBasic(Customizer.withDefaults());
     return http.build();
-  }
-
-  @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
   }
 
 }
