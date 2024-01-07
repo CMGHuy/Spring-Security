@@ -4,7 +4,9 @@ import { User } from '../model/user.model';
 import { KeycloakAuthGuard, KeycloakService } from 'keycloak-angular';
 import { KeycloakProfile } from 'keycloak-js';
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class AuthKeyClockGuard extends KeycloakAuthGuard {
   user = new User();
 
