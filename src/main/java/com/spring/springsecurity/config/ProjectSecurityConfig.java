@@ -1,15 +1,13 @@
 package com.spring.springsecurity.config;
 
-import com.spring.springsecurity.filter.*;
+import com.spring.springsecurity.filter.CsrfCookieFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -27,6 +25,10 @@ public class ProjectSecurityConfig {
   SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
     CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
     requestHandler.setCsrfRequestAttributeName("_csrf");
+
+    JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+    jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter());
+
     http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
           @Override
@@ -43,15 +45,20 @@ public class ProjectSecurityConfig {
         })).csrf((csrf) -> csrf.csrfTokenRequestHandler(requestHandler).ignoringRequestMatchers("/contact","/register")
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
         .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
-        .authorizeHttpRequests((requests)->requests
-            .requestMatchers("/myAccount").hasRole("USER")
-            .requestMatchers("/myBalance").hasAnyRole("USER","ADMIN")
-            .requestMatchers("/myLoans").authenticated()
-            .requestMatchers("/myCards").hasRole("USER")
-            .requestMatchers("/user").authenticated()
-            .requestMatchers("/notices","/contact","/register", "/error").permitAll())
-        .formLogin(Customizer.withDefaults())
-        .httpBasic(Customizer.withDefaults());
+        .authorizeHttpRequests(requests -> {
+            try {
+                requests
+                    .requestMatchers("/myAccount").hasRole("USER")
+                    .requestMatchers("/myBalance").hasAnyRole("USER", "ADMIN")
+                    .requestMatchers("/myLoans").authenticated()
+                    .requestMatchers("/myCards").hasRole("USER")
+                    .requestMatchers("/user").authenticated()
+                    .requestMatchers("/notices", "/contact", "/register", "/error").permitAll()
+                    .and().oauth2ResourceServer().jwt().jwtAuthenticationConverter(jwtAuthenticationConverter);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     return http.build();
   }
 
